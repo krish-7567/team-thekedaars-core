@@ -1,6 +1,6 @@
 <div align="center">
   
-  # 🚧 Karigar App
+  # 🚧 कारीGAR APP
   **Smart Migrant Labor Welfare Platform**
   
   *An Agentic AI ecosystem designed to safeguard interstate migrant workers by automating welfare eligibility mapping, wage fairness auditing, and hazard detection. Built for the IBM University Engagement Project.*
@@ -54,3 +54,28 @@ graph LR
   E1 & E2 & E3 & E4 -- "Priority JSON Flags" --> E
   E -- "Actionable Intelligence" --> C
   C -- "Idempotent Refresh" --> B
+```
+## 🛠️ Technology Stack
+
+| Domain | Technologies Used |
+| :--- | :--- |
+| **AI Infrastructure** | `IBM watsonx.ai`, `IBM Granite-4.0-8B-Instruct` |
+| **Database** | `IBM Cloudant` *(NoSQL Document Database)* |
+| **Backend Orchestration** | `Python`, `FastAPI`, `Render Cloud` |
+| **Frontend (Mobile Edge)** | `Flutter`, `Dart` *(Release APK)* |
+| **Frontend (Command Center)**| `HTML5`, `Tailwind CSS`, `Vanilla JS` |
+
+## 🌐 Live System Access
+
+**[🚀 Access Live Command Center Dashboard](https://team-thekedaars-karigar.onrender.com/dashboard)**
+
+> **System Note:** The dashboard updates asynchronously in real-time as incoming grievances are processed, analyzed, and flagged by the autonomous AI agents.
+
+## 👥 Team Thekedaars
+
+| Team Member | Engineering Role |
+| :--- | :--- |
+| **Anurrag Singh Tomar** | Team Leader & Lead Architecture Engineer |
+| **Prasiddhi Mishra** | Lead Frontend Developer & UI/UX Designer |
+| **Krish Singh** | Backend Systems & API Integrations Developer |
+| **Shrihari H Kulkarni** | Cloud Database & Infrastructure Engineer |
