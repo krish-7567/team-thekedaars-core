@@ -47,3 +47,23 @@ graph LR
   E1 & E2 & E3 & E4 -- "Priority JSON Flags" --> E
   E -- "Actionable Intelligence" --> C
   C -- "Idempotent Refresh" --> B
+```
+## Technology Stack
+
+AI Infrastructure: IBM watsonx.ai, IBM Granite-4.0-8B-Instruct
+Database: IBM Cloudant (NoSQL Document Database)
+Backend Orchestration: Python, FastAPI, Render Cloud
+Frontend (Mobile): Flutter, Dart (Release APK)
+Frontend (Dashboard): HTML5, Tailwind CSS, Vanilla JS
+
+## Live System Access
+
+Command Center Dashboard: Access Live Deployment
+Note: Dashboard updates asynchronously as new grievances are processed by the AI agents.
+
+## Team Thekedaars
+
+Anurrag Singh Tomar - Team Leader & Lead Engineer
+Prasiddhi Mishra - Frontend Developer & UI/UX Design
+Krish Singh - Backend Developer
+Shrihari H Kulkarni - Database Engineer
