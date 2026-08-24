@@ -1,0 +1,61 @@
+=================================== trial 1 ==================================================
+import os
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+from ibm_watsonx_ai.foundation_models import ModelInference
+from ibm_watsonx_ai.metanames import GenTextParamsMetaNames as GenParams
+
+# Step uno :) 1 - loading the secret vault (.env)
+load_dotenv()
+
+API_KEY = os.getenv("IBM_CLOUD_API_KEY")
+PROJECT_ID = os.getenv("WATSONX_PROJECT_ID")
+
+# Step twoooo :) 2 - initialijing the API keys (unknown to claude btw)
+app = FastAPI(title="Kari-gar API", description="Backend for Migrant Labor Welfare")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Step threeee :) 3 - setup of the grand IBM Granite LLM Connection
+def get_granite_model():
+    credentials = {
+        "url": "https://us-south.ml.cloud.ibm.com",
+        "apikey": API_KEY
+    }
+    
+    parameters = {
+        GenParams.DECODING_METHOD: "greedy",
+        GenParams.MAX_NEW_TOKENS: 100,
+    }
+    
+    # we are using the Granite 13B Instruct model as its perfect for our Agent tasks
+    model = ModelInference(
+        # model_id="ibm/granite-13b-instruct-v2", 
+        model_id="ibm/granite-3-1-8b-base",
+        params=parameters,
+        credentials=credentials,
+        project_id=PROJECT_ID
+    )
+    return model
+
+# Step fourrrr :) - Our Endpoints
+@app.get("/")
+def health_check():
+    return {"status": "Karigar Backend is ALIVE", "ibm_granite_status": "Keys Loaded"}
+
+@app.get("/test-ai")
+def test_ai_connection():
+    try:
+        model = get_granite_model()
+        # Sending a test prompt to Granite
+        response = model.generate_text("Say exactly this: 'Hello Karigar Team, I am IBM Granite.' and nothing else.")
+        return {"success": True, "granite_response": response.strip()}
+    except Exception as e:
+        return {"success": False, "error": str(e)}

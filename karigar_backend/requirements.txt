@@ -1,0 +1,7 @@
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+pydantic>=2.6.3
+python-dotenv>=1.0.1
+ibm-watsonx-ai>=0.2.7
+ibmcloudant>=0.9.1
+sse-starlette>=1.6.1
