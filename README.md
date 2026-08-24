@@ -1,16 +1,23 @@
-# Karigar App - Smart Migrant Labor Welfare Platform
+<div align="center">
+  
+  # 🚧 Karigar App
+  **Smart Migrant Labor Welfare Platform**
+  
+  *An Agentic AI ecosystem designed to safeguard interstate migrant workers by automating welfare eligibility mapping, wage fairness auditing, and hazard detection. Built for the IBM University Engagement Project.*
+  
+</div>
 
-An Agentic AI ecosystem designed to safeguard interstate migrant workers by automating welfare eligibility mapping, wage fairness auditing, and hazard detection. Built for the IBM University Engagement Project.
+---
 
-## System Overview
+## 📖 System Overview
 
-Gujarat hosts a massive interstate migrant workforce across construction, textiles, and chemical processing. The Karigar App bridges the gap between vulnerable workers and government welfare schemes (e.g., BOCW, PM-SYM) using a multi-agent AI architecture. 
+Gujarat hosts a massive interstate migrant workforce across construction, textiles, and chemical processing. The **Karigar App** bridges the critical gap between vulnerable workers and government welfare schemes (e.g., BOCW, PM-SYM) utilizing a highly scalable, multi-agent AI architecture. 
 
-Rather than a passive chatbot, the system utilizes specialized IBM Granite AI agents to extract artisan skills, audit statutory wage compliance, and escalate critical safety hazards to a real-time command center.
+> **The Agentic Advantage:** Rather than relying on a passive chatbot, the system utilizes specialized IBM Granite AI agents to actively extract artisan skills, audit statutory wage compliance, and autonomously escalate critical safety hazards to a real-time command center.
 
-## Core Architecture
+## 🏛️ Core Architecture
 
-Our platform utilizes a dual-tier approach: a Flutter mobile application for edge data collection, routed through a custom FastAPI orchestrator, heavily integrated with IBM Cloud services.
+Our platform utilizes a dual-tier edge approach: a Flutter mobile application for raw data collection, securely routed through a custom FastAPI orchestrator, and deeply integrated with IBM Cloud services for AI processing and schema-less data storage.
 
 ```mermaid
 graph LR
@@ -47,23 +54,3 @@ graph LR
   E1 & E2 & E3 & E4 -- "Priority JSON Flags" --> E
   E -- "Actionable Intelligence" --> C
   C -- "Idempotent Refresh" --> B
-```
-## Technology Stack
-
-AI Infrastructure: IBM watsonx.ai, IBM Granite-4.0-8B-Instruct
-Database: IBM Cloudant (NoSQL Document Database)
-Backend Orchestration: Python, FastAPI, Render Cloud
-Frontend (Mobile): Flutter, Dart (Release APK)
-Frontend (Dashboard): HTML5, Tailwind CSS, Vanilla JS
-
-## Live System Access
-
-Command Center Dashboard: Access Live Deployment
-Note: Dashboard updates asynchronously as new grievances are processed by the AI agents.
-
-## Team Thekedaars
-
-Anurrag Singh Tomar - Team Leader & Lead Engineer
-Prasiddhi Mishra - Frontend Developer & UI/UX Design
-Krish Singh - Backend Developer
-Shrihari H Kulkarni - Database Engineer
