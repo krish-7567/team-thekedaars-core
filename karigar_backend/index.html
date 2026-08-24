@@ -1,573 +1,636 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karigar · Labor Welfare Command Center</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { background-color: #080b12; color: #f8fafc; font-family: 'Inter', sans-serif; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
-        .neon-border-blue { box-shadow: 0 0 10px rgba(59,130,246,0.5), inset 0 0 10px rgba(59,130,246,0.2); border-color: rgba(59,130,246,0.8); }
-        .neon-text-blue   { text-shadow: 0 0 8px rgba(59,130,246,0.8); }
-        .alert-card       { transition: all 0.3s ease-in-out; cursor: pointer; border: 1px solid #1e293b; background: rgba(15,23,42,0.8); }
-        .alert-card:hover { transform: translateY(-3px) scale(1.02); background: rgba(30,41,59,0.9); }
-        .hover-glow-red:hover    { box-shadow: 0 0 15px rgba(239,68,68,0.6); border-color: rgba(239,68,68,0.8); }
-        .hover-glow-orange:hover { box-shadow: 0 0 15px rgba(249,115,22,0.6); border-color: rgba(249,115,22,0.8); }
-        .hover-glow-yellow:hover { box-shadow: 0 0 15px rgba(234,179,8,0.6);  border-color: rgba(234,179,8,0.8); }
-        .hover-glow-green:hover  { box-shadow: 0 0 15px rgba(34,197,94,0.6);  border-color: rgba(34,197,94,0.8); }
-        .critical-alert { animation: neon-pulse-red 2s infinite; border: 1px solid #ef4444; }
-        @keyframes neon-pulse-red {
-            0%   { box-shadow: 0 0 5px rgba(239,68,68,0.4), inset 0 0 5px rgba(239,68,68,0.2); }
-            50%  { box-shadow: 0 0 20px rgba(239,68,68,0.8), inset 0 0 10px rgba(239,68,68,0.4); }
-            100% { box-shadow: 0 0 5px rgba(239,68,68,0.4), inset 0 0 5px rgba(239,68,68,0.2); }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Karigar Command Center — IBM Watsonx AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'], mono: ['IBM Plex Mono', 'monospace'] },
+          colors: {
+            canvas:  '#F5F5F7',
+            surface: '#FFFFFF',
+            border:  '#E5E5EA',
+            ink:     '#1D1D1F',
+            muted:   '#6E6E73',
+            indigo:  '#22405A',
+            rust:    '#C1552C',
+            safe:    '#2F8F5B',
+            alert:   '#C93B3B',
+            marigold:'#F2A93B',
+          },
+          borderRadius: { '2xl': '16px', '3xl': '24px' },
+          boxShadow: {
+            card:  '0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04)',
+            hover: '0 4px 16px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)',
+            modal: '0 8px 40px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.06)',
+          },
         }
-        .glass-modal { background: rgba(15,23,42,0.92); backdrop-filter: blur(16px); border: 1px solid rgba(59,130,246,0.5); box-shadow: 0 0 40px rgba(59,130,246,0.3); }
-        .agent-row   { border-bottom: 1px solid rgba(51,65,85,0.4); }
-        .agent-row:last-child { border-bottom: none; }
-    </style>
+      }
+    };
+  </script>
+  <style>
+    * { -webkit-font-smoothing: antialiased; }
+    body { background: #F5F5F7; font-family: 'Inter', system-ui, sans-serif; }
+
+    /* ── Scrollbars ─────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #D1D1D6; border-radius: 4px; }
+
+    /* ── Case feed card ─────────────────────────────── */
+    .case-card {
+      transition: all 0.18s cubic-bezier(.4,0,.2,1);
+      cursor: pointer;
+      border: 1px solid #E5E5EA;
+    }
+    .case-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+      border-color: #C8C8CC;
+    }
+    .case-card.active {
+      border-color: #22405A;
+      box-shadow: 0 0 0 2px rgba(34,64,90,0.15), 0 4px 16px rgba(0,0,0,0.08);
+    }
+
+    /* ── Slide-in for new feed items ────────────────── */
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .slide-in { animation: slideIn 0.28s cubic-bezier(.4,0,.2,1) forwards; }
+
+    /* ── Pulse for live indicator ───────────────────── */
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+    .live-dot { animation: livePulse 2s ease-in-out infinite; }
+
+    /* ── KPI number pop ─────────────────────────────── */
+    @keyframes numPop {
+      0%   { transform: scale(0.92); opacity: 0; }
+      60%  { transform: scale(1.04); }
+      100% { transform: scale(1);    opacity: 1; }
+    }
+    .num-pop { animation: numPop 0.32s cubic-bezier(.4,0,.2,1) forwards; }
+
+    /* ── Detail panel fade ──────────────────────────── */
+    @keyframes panelFade {
+      from { opacity: 0; transform: translateX(6px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .panel-fade { animation: panelFade 0.22s ease-out forwards; }
+
+    /* ── Scheme chip ────────────────────────────────── */
+    .scheme-chip { transition: background 0.15s; }
+    .scheme-chip:hover { background: #DCE9F1; }
+  </style>
 </head>
-<body class="flex h-screen overflow-hidden selection:bg-blue-500 selection:text-white">
+<body class="min-h-screen">
 
-    <!-- ======================= DETAIL MODAL ======================= -->
-    <div id="custom-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/70 backdrop-blur-sm">
-        <div class="glass-modal w-full max-w-xl rounded-2xl p-8 relative transform transition-all duration-300" id="modal-content">
-            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-red-400 transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
+  <!-- ════════════════════════════════════════════════════
+       HEADER
+  ════════════════════════════════════════════════════ -->
+  <header class="bg-surface border-b border-border sticky top-0 z-30">
+    <div class="max-w-screen-xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
 
-            <!-- Modal header -->
-            <div class="flex items-center space-x-3 mb-5">
-                <span class="flex h-4 w-4 relative">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-4 w-4 bg-blue-500"></span>
-                </span>
-                <h3 class="text-xl font-bold neon-text-blue tracking-wide">CASE INTERCEPT</h3>
-                <span id="modal-triage-badge" class="ml-auto text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border"></span>
-            </div>
-
-            <!-- Worker profile -->
-            <div class="space-y-4 border-t border-slate-700/50 pt-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <p class="text-[10px] text-slate-400 uppercase tracking-wider">Worker / Location</p>
-                        <p class="text-base font-semibold text-white" id="modal-name">—</p>
-                        <p class="text-xs text-blue-300" id="modal-location">—</p>
-                    </div>
-                    <div>
-                        <p class="text-[10px] text-slate-400 uppercase tracking-wider">Industry · Cluster</p>
-                        <p class="text-base text-blue-300" id="modal-industry">—</p>
-                        <p class="text-xs text-slate-500 font-mono" id="modal-cluster">—</p>
-                    </div>
-                </div>
-
-                <!-- Triage rationale -->
-                <div>
-                    <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Triage Rationale</p>
-                    <p class="text-xs text-slate-300 bg-slate-900/60 p-2 rounded border border-slate-700/50" id="modal-rationale">—</p>
-                </div>
-
-                <!-- Wage analysis -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <p class="text-[10px] text-slate-400 uppercase tracking-wider">Wage Deficit</p>
-                        <p class="text-lg font-bold font-mono" id="modal-wage-deficit">—</p>
-                    </div>
-                    <div>
-                        <p class="text-[10px] text-slate-400 uppercase tracking-wider">Wage Severity</p>
-                        <p class="text-lg font-bold font-mono" id="modal-wage-severity">—</p>
-                    </div>
-                </div>
-
-                <!-- BOCW violations -->
-                <div>
-                    <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-2">BOCW Violations</p>
-                    <div id="modal-bocw" class="space-y-1"></div>
-                </div>
-
-                <!-- Violation tags -->
-                <div>
-                    <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-2">AI Violation Flags</p>
-                    <div id="modal-tags" class="flex flex-wrap gap-2"></div>
-                </div>
-
-                <!-- Welfare schemes -->
-                <div>
-                    <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-2">Eligible Welfare Schemes</p>
-                    <div id="modal-schemes" class="flex flex-wrap gap-2"></div>
-                </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="mt-6 pt-4 border-t border-slate-700/50 flex justify-end gap-3">
-                <button onclick="closeModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm transition-colors">Dismiss</button>
-                <button onclick="closeModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm neon-border-blue transition-all">Route to Welfare Agency</button>
-            </div>
+      <!-- Left: brand -->
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-xl bg-indigo flex items-center justify-center flex-shrink-0">
+          <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
         </div>
+        <div>
+          <p class="text-sm font-800 text-ink leading-tight" style="font-weight:800;">कारीgar Command Center</p>
+          <p class="text-xs text-muted font-mono leading-tight">Migrant Worker AI Welfare Platform</p>
+        </div>
+      </div>
+
+      <!-- Centre: IBM badge -->
+      <div class="hidden sm:flex items-center gap-2 bg-indigo/5 border border-indigo/20 rounded-2xl px-4 py-2">
+        <span class="live-dot w-2 h-2 rounded-full bg-safe flex-shrink-0"></span>
+        <span class="text-xs font-mono font-600 text-indigo" style="font-weight:600;">IBM Watsonx AI · Granite 4H</span>
+        <span class="text-xs font-mono text-muted">5-Agent Orchestration</span>
+      </div>
+
+      <!-- Right: live clock + refresh status -->
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-1.5 text-xs font-mono text-muted">
+          <span id="refreshStatus" class="w-1.5 h-1.5 rounded-full bg-muted/40"></span>
+          <span id="lastRefresh">–</span>
+        </div>
+        <div class="text-xs font-mono text-ink font-600" id="liveClock" style="font-weight:600;"></div>
+      </div>
     </div>
+  </header>
 
-    <!-- ======================= SIDEBAR ======================= -->
-    <aside class="w-64 bg-[#0a0f18] border-r border-slate-800 flex-col hidden md:flex relative z-10">
-        <div class="h-16 flex items-center px-6 border-b border-slate-800">
-            <h1 class="text-2xl font-bold tracking-wider">
-                <span class="text-blue-500 neon-text-blue">Karigar</span><span class="text-white">App</span>
-            </h1>
+  <!-- ════════════════════════════════════════════════════
+       MAIN LAYOUT
+  ════════════════════════════════════════════════════ -->
+  <main class="max-w-screen-xl mx-auto px-6 py-6">
+
+    <!-- ── KPI Row ──────────────────────────────────── -->
+    <section class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6" id="kpiRow">
+      <!-- KPI 1 -->
+      <div class="bg-surface rounded-3xl border border-border shadow-card p-5">
+        <p class="text-xs font-mono text-muted uppercase tracking-widest mb-2">Total Reports</p>
+        <p class="text-4xl font-black text-ink leading-none num-pop" id="kpiTotal">—</p>
+        <p class="text-xs text-muted mt-2">Cases in IBM Cloudant DB</p>
+      </div>
+      <!-- KPI 2 -->
+      <div class="bg-surface rounded-3xl border border-border shadow-card p-5">
+        <p class="text-xs font-mono text-muted uppercase tracking-widest mb-2">High Severity Alerts</p>
+        <p class="text-4xl font-black text-alert leading-none num-pop" id="kpiHigh">—</p>
+        <p class="text-xs text-muted mt-2">Critical + High risk cases</p>
+      </div>
+      <!-- KPI 3 -->
+      <div class="bg-surface rounded-3xl border border-border shadow-card p-5 flex flex-col justify-between">
+        <div>
+          <p class="text-xs font-mono text-muted uppercase tracking-widest mb-2">AI Processing</p>
+          <p class="text-4xl font-black text-safe leading-none">99.9%</p>
+          <p class="text-xs text-muted mt-2">Watsonx uptime · 5 agents active</p>
         </div>
-        <nav class="flex-1 p-4 space-y-2">
-            <a href="#" class="block px-4 py-2 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg font-medium neon-border-blue">Command Center</a>
-        </nav>
-        <div class="p-4 border-t border-slate-800">
-            <p class="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Platform</p>
-            <p class="text-xs text-slate-400">IBM Granite 4H-Small</p>
-            <p class="text-xs text-slate-500 font-mono">5-Agent Orchestration</p>
-            <p class="text-xs text-slate-500 font-mono">IBM Cloudant NoSQL</p>
+        <div class="flex gap-1.5 mt-4 flex-wrap" id="kpiRiskBar">
+          <!-- Risk chips injected by JS -->
         </div>
-    </aside>
+      </div>
+    </section>
 
-    <!-- ======================= MAIN CONTENT ======================= -->
-    <div class="flex-1 flex flex-col h-screen overflow-y-auto">
+    <!-- ── Split Content ────────────────────────────── -->
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
 
-        <!-- Header -->
-        <header class="h-16 bg-[#0a0f18]/90 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-8 sticky top-0 z-10">
-            <h2 class="text-xl font-semibold text-slate-200">Karigar · Labor Welfare Command Center</h2>
-            <div class="flex items-center space-x-4">
-                <span class="text-xs text-slate-500 font-mono" id="last-updated">Connecting...</span>
-                <div class="flex items-center space-x-2 bg-green-500/10 px-3 py-1.5 rounded-full border border-green-500/30">
-                    <span class="flex h-2.5 w-2.5 relative">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500 shadow-[0_0_8px_#22c55e]"></span>
-                    </span>
-                    <span class="text-xs text-green-400 font-medium tracking-wide">IBM Granite Neural Link: ACTIVE</span>
-                </div>
+      <!-- LEFT: Case Feed (2 cols) -->
+      <section class="lg:col-span-2 flex flex-col gap-3">
+        <!-- Feed header -->
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-sm font-bold text-ink" style="font-weight:700;">Live Grievance Feed</h2>
+            <p class="text-xs text-muted font-mono">Auto-refreshes every 5 s</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <!-- Search mini -->
+            <input id="searchInput" type="text" placeholder="Filter…"
+              class="text-xs border border-border rounded-xl px-3 py-1.5 bg-canvas text-ink w-28 focus:outline-none focus:border-indigo/60 transition-colors font-mono"
+              oninput="filterFeed(this.value)" />
+            <span class="live-dot w-2 h-2 rounded-full bg-safe"></span>
+            <span class="text-xs font-mono text-safe font-600" style="font-weight:600;" id="caseCount">0 cases</span>
+          </div>
+        </div>
+
+        <!-- Feed list -->
+        <div class="flex flex-col gap-2 overflow-y-auto max-h-[calc(100vh-280px)] pr-0.5" id="caseFeed">
+          <!-- Empty state -->
+          <div id="feedEmpty" class="bg-surface rounded-3xl border border-border shadow-card p-8 text-center">
+            <div class="w-10 h-10 rounded-2xl bg-canvas flex items-center justify-center mx-auto mb-3">
+              <svg class="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
             </div>
-        </header>
+            <p class="text-sm font-600 text-muted" style="font-weight:600;">Waiting for cases…</p>
+            <p class="text-xs text-muted/60 font-mono mt-1">Polling /api/v1/cases</p>
+          </div>
+        </div>
+      </section>
 
-        <main class="p-6 space-y-6">
+      <!-- RIGHT: AI Analysis Panel (3 cols) -->
+      <section class="lg:col-span-3 bg-surface rounded-3xl border border-border shadow-card overflow-hidden flex flex-col" style="min-height: 520px;">
 
-            <!-- ── KPI CARDS (all live) ── -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-[#0a0f18]/80 backdrop-blur p-5 rounded-xl border border-slate-700">
-                    <h3 class="text-slate-400 text-[10px] uppercase tracking-widest">Total Reports</h3>
-                    <p class="text-3xl font-bold mt-2 text-blue-100 font-mono" id="metric-total">—</p>
-                    <p class="text-[10px] text-slate-500 mt-1">Cases in IBM Cloudant</p>
-                </div>
-                <div class="bg-[#0a0f18]/80 backdrop-blur p-5 rounded-xl border border-slate-700">
-                    <h3 class="text-slate-400 text-[10px] uppercase tracking-widest">Active Anomalies</h3>
-                    <p class="text-3xl font-bold mt-2 text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)] font-mono" id="metric-anomalies">—</p>
-                    <p class="text-[10px] text-slate-500 mt-1">High + Critical cases</p>
-                </div>
-                <div class="bg-[#0a0f18]/80 backdrop-blur p-5 rounded-xl border border-slate-700 neon-border-blue relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-16 h-16 bg-red-500/20 blur-2xl"></div>
-                    <h3 class="text-slate-400 text-[10px] uppercase tracking-widest">Critical Intercepts</h3>
-                    <p class="text-3xl font-bold mt-2 text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.8)] font-mono" id="metric-critical">—</p>
-                    <p class="text-[10px] text-slate-500 mt-1">Immediate intervention needed</p>
-                </div>
-                <div class="bg-[#0a0f18]/80 backdrop-blur p-5 rounded-xl border border-slate-700">
-                    <h3 class="text-slate-400 text-[10px] uppercase tracking-widest">Welfare Matches</h3>
-                    <p class="text-3xl font-bold mt-2 text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.5)] font-mono" id="metric-welfare">—</p>
-                    <p class="text-[10px] text-slate-500 mt-1">Scheme eligibilities found</p>
-                </div>
+        <!-- Panel: empty state -->
+        <div id="panelEmpty" class="flex flex-col items-center justify-center h-full p-10 text-center">
+          <div class="w-16 h-16 rounded-3xl bg-indigo/8 border border-indigo/15 flex items-center justify-center mb-5">
+            <svg class="w-8 h-8 text-indigo" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15M14.25 3.104c.251.023.501.05.75.082M19.8 15l-1.989-4.5M5 14.5l1.989-4.5m0 0a24.301 24.301 0 017.022 0"/>
+            </svg>
+          </div>
+          <p class="text-base font-bold text-ink" style="font-weight:700;">Select a case to view AI analysis</p>
+          <p class="text-sm text-muted mt-1 max-w-xs">Click any card in the feed to load the IBM Watsonx 5-agent output</p>
+        </div>
+
+        <!-- Panel: content (hidden until case selected) -->
+        <div id="panelContent" class="hidden flex flex-col h-full overflow-y-auto">
+          <!-- Panel header -->
+          <div class="px-6 pt-5 pb-4 border-b border-border flex items-start justify-between gap-4 flex-shrink-0">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs font-mono text-muted" id="panelCaseId"></span>
+                <span class="text-xs font-mono text-muted">·</span>
+                <span class="text-xs font-mono text-muted" id="panelTimestamp"></span>
+              </div>
+              <h3 class="text-xl font-black text-ink leading-tight" style="font-weight:900;" id="panelWorkerName">–</h3>
+              <p class="text-sm text-muted mt-0.5" id="panelMeta"></p>
             </div>
+            <div id="panelTriageBadge" class="flex-shrink-0"></div>
+          </div>
 
-            <!-- ── CHART + LIVE FEED ── -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Panel body: scrollable sections -->
+          <div class="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
 
-                <!-- Sector Distribution Chart (live data from analytics) -->
-                <div class="bg-[#0a0f18]/80 backdrop-blur p-6 rounded-xl border border-slate-700 lg:col-span-2">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-sm uppercase tracking-widest text-slate-400">Sector Distribution</h3>
-                        <span class="text-[10px] text-slate-500 font-mono" id="chart-source">Live from Cloudant</span>
-                    </div>
-                    <div class="relative h-56 w-full"><canvas id="industryChart"></canvas></div>
-                </div>
-
-                <!-- Live AI Feed -->
-                <div class="bg-[#0a0f18]/80 backdrop-blur p-6 rounded-xl border border-slate-700 flex flex-col h-[380px]">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-sm uppercase tracking-widest text-slate-300">Live AI Feed</h3>
-                        <span class="text-[10px] bg-red-500/10 text-red-400 px-2 py-1 rounded border border-red-500/30 uppercase tracking-widest flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span> DB Sync
-                        </span>
-                    </div>
-                    <div id="alert-feed" class="flex-1 overflow-y-auto space-y-3 pr-1 pb-2">
-                        <p class="text-slate-500 text-sm animate-pulse">Fetching from IBM Cloudant...</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── AGENT TELEMETRY PANEL (highly visible for judges) ── -->
-            <div class="bg-[#0a0f18]/80 backdrop-blur rounded-xl border border-blue-500/30 neon-border-blue overflow-hidden">
-                <div class="flex items-center gap-3 px-6 py-4 border-b border-slate-800/60">
-                    <span class="flex h-3 w-3 relative">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60"></span>
-                        <span class="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
-                    </span>
-                    <h3 class="text-sm font-bold text-blue-300 uppercase tracking-widest">IBM Granite 5-Agent Telemetry</h3>
-                    <span class="text-[10px] text-slate-500 font-mono ml-auto" id="telemetry-case-id">No case processed yet</span>
-                </div>
-
-                <div class="divide-y divide-slate-800/40">
-                    <!-- Agent 1 -->
-                    <div class="agent-row grid grid-cols-12 gap-4 px-6 py-3 items-start">
-                        <div class="col-span-3">
-                            <p class="text-[10px] font-bold text-blue-400 uppercase tracking-wider">Agent 1</p>
-                            <p class="text-xs text-slate-300 font-semibold">Skill &amp; Location Mapping</p>
-                            <p class="text-[10px] text-slate-500">Gujarat cluster resolver</p>
-                        </div>
-                        <div class="col-span-3">
-                            <p class="text-[10px] text-slate-500 uppercase">Cluster</p>
-                            <p class="text-xs text-blue-200 font-mono" id="tel-cluster">—</p>
-                        </div>
-                        <div class="col-span-3">
-                            <p class="text-[10px] text-slate-500 uppercase">Skills Mapped</p>
-                            <p class="text-xs text-blue-200 font-mono" id="tel-skills">—</p>
-                        </div>
-                        <div class="col-span-3">
-                            <p class="text-[10px] text-slate-500 uppercase">Confidence</p>
-                            <p class="text-xs text-green-400 font-mono font-bold" id="tel-skill-confidence">—</p>
-                        </div>
-                    </div>
-
-                    <!-- Agent 2 -->
-                    <div class="agent-row grid grid-cols-12 gap-4 px-6 py-3 items-start">
-                        <div class="col-span-3">
-                            <p class="text-[10px] font-bold text-yellow-400 uppercase tracking-wider">Agent 2</p>
-                            <p class="text-xs text-slate-300 font-semibold">Wage Fairness Monitor</p>
-                            <p class="text-[10px] text-slate-500">Gujarat Min. Wage 2024-25</p>
-                        </div>
-                        <div class="col-span-3">
-                            <p class="text-[10px] text-slate-500 uppercase">Reported Wage</p>
-                            <p class="text-xs text-yellow-200 font-mono" id="tel-reported-wage">—</p>
-                        </div>
-                        <div class="col-span-3">
-                            <p class="text-[10px] text-slate-500 uppercase">Legal Minimum</p>
-                            <p class="text-xs text-yellow-200 font-mono" id="tel-min-wage">—</p>
-                        </div>
-                        <div class="col-span-3">
-                            <p class="text-[10px] text-slate-500 uppercase">Deficit / Severity</p>
-                            <p class="text-xs font-mono font-bold" id="tel-wage-deficit">—</p>
-                        </div>
-                    </div>
-
-                    <!-- Agent 3 -->
-                    <div class="agent-row grid grid-cols-12 gap-4 px-6 py-3 items-start">
-                        <div class="col-span-3">
-                            <p class="text-[10px] font-bold text-red-400 uppercase tracking-wider">Agent 3</p>
-                            <p class="text-xs text-slate-300 font-semibold">Grievance &amp; Safety</p>
-                            <p class="text-[10px] text-slate-500">BOCW / OSHA compliance</p>
-                        </div>
-                        <div class="col-span-3">
-                            <p class="text-[10px] text-slate-500 uppercase">Triage Score</p>
-                            <p class="text-xs font-mono font-bold" id="tel-triage">—</p>
-                        </div>
-                        <div class="col-span-6">
-                            <p class="text-[10px] text-slate-500 uppercase">Rationale</p>
-                            <p class="text-[11px] text-slate-300" id="tel-rationale">—</p>
-                        </div>
-                    </div>
-
-                    <!-- Agent 4 -->
-                    <div class="agent-row grid grid-cols-12 gap-4 px-6 py-3 items-start">
-                        <div class="col-span-3">
-                            <p class="text-[10px] font-bold text-green-400 uppercase tracking-wider">Agent 4</p>
-                            <p class="text-xs text-slate-300 font-semibold">Welfare Eligibility</p>
-                            <p class="text-[10px] text-slate-500">Deterministic rule engine</p>
-                        </div>
-                        <div class="col-span-3">
-                            <p class="text-[10px] text-slate-500 uppercase">Matched Schemes</p>
-                            <p class="text-xs text-green-400 font-mono font-bold" id="tel-schemes-count">—</p>
-                        </div>
-                        <div class="col-span-6">
-                            <p class="text-[10px] text-slate-500 uppercase">Scheme Names</p>
-                            <p class="text-[11px] text-slate-300" id="tel-scheme-names">—</p>
-                        </div>
-                    </div>
-
-                    <!-- Agent 5 -->
-                    <div class="agent-row grid grid-cols-12 gap-4 px-6 py-3 items-start">
-                        <div class="col-span-3">
-                            <p class="text-[10px] font-bold text-purple-400 uppercase tracking-wider">Agent 5</p>
-                            <p class="text-xs text-slate-300 font-semibold">Dashboard Analytics</p>
-                            <p class="text-[10px] text-slate-500">Cloudant aggregation</p>
-                        </div>
-                        <div class="col-span-3">
-                            <p class="text-[10px] text-slate-500 uppercase">Risk Distribution</p>
-                            <p class="text-[11px] text-purple-300 font-mono" id="tel-risk-dist">—</p>
-                        </div>
-                        <div class="col-span-3">
-                            <p class="text-[10px] text-slate-500 uppercase">Welfare Total</p>
-                            <p class="text-xs text-purple-300 font-mono font-bold" id="tel-welfare-total">—</p>
-                        </div>
-                        <div class="col-span-3">
-                            <p class="text-[10px] text-slate-500 uppercase">Last Sync</p>
-                            <p class="text-[11px] text-slate-400 font-mono" id="tel-sync-time">—</p>
-                        </div>
-                    </div>
-                </div>
+            <!-- Raw input -->
+            <div>
+              <p class="text-xs font-mono text-muted uppercase tracking-widest mb-2">Worker Statement</p>
+              <p class="text-sm text-ink leading-relaxed bg-canvas rounded-2xl px-4 py-3 border border-border font-mono" id="panelRawText"></p>
             </div>
 
-        </main>
+            <!-- Bento 2-col: Wage + Safety -->
+            <div class="grid grid-cols-2 gap-3">
+              <!-- Wage card -->
+              <div class="bg-canvas rounded-2xl border border-border p-4">
+                <p class="text-xs font-mono text-muted uppercase tracking-widest mb-3">Wage Analysis</p>
+                <p class="text-2xl font-black text-ink" id="panelWageDeficit">—</p>
+                <p class="text-xs text-muted mt-0.5 mb-3">Daily wage deficit</p>
+                <div class="flex flex-col gap-1.5" id="panelWageDetails"></div>
+              </div>
+              <!-- Safety card -->
+              <div class="bg-canvas rounded-2xl border border-border p-4">
+                <p class="text-xs font-mono text-muted uppercase tracking-widest mb-3">Safety Report</p>
+                <p class="text-xs text-ink leading-relaxed" id="panelTriageRationale"></p>
+                <div class="flex flex-wrap gap-1.5 mt-3" id="panelViolationTags"></div>
+              </div>
+            </div>
+
+            <!-- BOCW Compliance -->
+            <div id="bocwSection" class="hidden">
+              <p class="text-xs font-mono text-muted uppercase tracking-widest mb-2">BOCW Compliance Flags</p>
+              <div class="flex flex-col gap-1.5" id="panelBocwFlags"></div>
+            </div>
+
+            <!-- Welfare Schemes -->
+            <div id="schemesSection">
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-xs font-mono text-muted uppercase tracking-widest">Eligible Welfare Schemes</p>
+                <span class="text-xs font-mono font-600 text-safe" id="schemeCount" style="font-weight:600;"></span>
+              </div>
+              <div class="flex flex-wrap gap-2" id="panelSchemes"></div>
+            </div>
+
+            <!-- Worker Profile -->
+            <div>
+              <p class="text-xs font-mono text-muted uppercase tracking-widest mb-2">Worker Profile</p>
+              <div class="grid grid-cols-2 gap-2" id="panelProfileGrid"></div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
     </div>
+  </main>
 
-    <!-- ======================= JAVASCRIPT ======================= -->
-    <script>
-        // ── Chart: declare at module scope so it can be mutated ─────────────
-        const ctx = document.getElementById('industryChart').getContext('2d');
-        let industryChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Workers',
-                    data: [],
-                    backgroundColor: [
-                        'rgba(59,130,246,0.8)',  'rgba(16,185,129,0.8)',
-                        'rgba(245,158,11,0.8)',   'rgba(139,92,246,0.8)',
-                        'rgba(239,68,68,0.8)',    'rgba(20,184,166,0.8)',
-                        'rgba(249,115,22,0.8)',   'rgba(168,85,247,0.8)',
-                    ],
-                    borderWidth: 1, borderRadius: 4,
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { grid: { color: 'rgba(30,41,59,0.5)' }, ticks: { color: '#64748b' } },
-                    x: { grid: { display: false },              ticks: { color: '#64748b', maxRotation: 30 } }
-                }
-            }
-        });
+  <!-- ── Connection error toast ──────────────────────── -->
+  <div id="errorToast"
+    class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-alert text-white text-xs font-mono px-4 py-2.5 rounded-2xl shadow-modal hidden z-50 transition-all">
+    ⚠ Failed to reach backend — retrying…
+  </div>
 
-        // ── Idempotency guard ────────────────────────────────────────────────
-        let _lastCaseCount = -1;
+  <!-- ════════════════════════════════════════════════════
+       JAVASCRIPT
+  ════════════════════════════════════════════════════ -->
+  <script>
+  'use strict';
 
-        // ── Update chart from analytics.by_industry ──────────────────────────
-        function updateChart(byIndustry) {
-            if (!byIndustry || Object.keys(byIndustry).length === 0) return;
-            const labels = Object.keys(byIndustry);
-            const values = Object.values(byIndustry);
-            industryChart.data.labels = labels;
-            industryChart.data.datasets[0].data = values;
-            industryChart.update('active');
-            document.getElementById('chart-source').textContent = `Live · ${labels.length} sectors`;
-        }
+  // ── State ─────────────────────────────────────────────
+  let allCases      = [];   // raw array from API
+  let displayedIds  = new Set();
+  let selectedId    = null;
+  let filterQuery   = '';
 
-        // ── Update Agent Telemetry from most recent case ──────────────────────
-        function updateTelemetry(latestCase, analytics) {
-            if (!latestCase) return;
-            const wp = latestCase.worker_profile       || {};
-            const wa = latestCase.wage_analysis        || {};
-            const sr = latestCase.safety_report        || {};
-            const we = latestCase.welfare_entitlements || {};
+  // ── Helpers ───────────────────────────────────────────
+  const $ = id => document.getElementById(id);
 
-            document.getElementById('telemetry-case-id').textContent =
-                `Latest: ${latestCase._id || 'unknown'} · ${(latestCase.timestamp||'').substring(0,19).replace('T',' ')}Z`;
+  function fmtTimestamp(ts) {
+    if (!ts) return '—';
+    try {
+      const d = new Date(ts);
+      return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    } catch { return ts; }
+  }
 
-            // Agent 1
-            document.getElementById('tel-cluster').textContent        = wp.cluster       || '—';
-            document.getElementById('tel-skills').textContent         = (wp.inferred_skills||[]).join(', ') || '—';
-            document.getElementById('tel-skill-confidence').textContent = (wp.skill_confidence != null) ? `${wp.skill_confidence}%` : '—';
+  function fmtDateFull(ts) {
+    if (!ts) return '—';
+    try {
+      const d = new Date(ts);
+      return d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+    } catch { return ts; }
+  }
 
-            // Agent 2
-            const repWage = wa.reported_daily_wage;
-            const minWage = wa.minimum_legal_wage;
-            const deficit = wa.wage_deficit || 0;
-            const wSev    = wa.violation_severity || 'None';
-            document.getElementById('tel-reported-wage').textContent  = repWage != null ? `₹${repWage}/day` : '—';
-            document.getElementById('tel-min-wage').textContent       = minWage != null ? `₹${minWage}/day (${wa.wage_category||''})` : '—';
-            const defEl = document.getElementById('tel-wage-deficit');
-            defEl.textContent = deficit > 0 ? `₹${deficit} · ${wSev}` : `0 · ${wSev}`;
-            defEl.className   = `text-xs font-mono font-bold ${deficit > 0 ? 'text-red-400' : 'text-green-400'}`;
+  function severityColors(level) {
+    const map = {
+      critical: { bg: 'bg-red-50',      border: 'border-red-200',    text: 'text-red-700',    dot: 'bg-red-500'    },
+      high:     { bg: 'bg-orange-50',   border: 'border-orange-200', text: 'text-orange-700', dot: 'bg-orange-500' },
+      medium:   { bg: 'bg-amber-50',    border: 'border-amber-200',  text: 'text-amber-700',  dot: 'bg-amber-400'  },
+      low:      { bg: 'bg-emerald-50',  border: 'border-green-200',  text: 'text-emerald-700',dot: 'bg-emerald-500'},
+    };
+    return map[(level || 'medium').toLowerCase()] || map.medium;
+  }
 
-            // Agent 3
-            const triage = sr.risk_triage_score || sr.safety_risk_level || '—';
-            const triEl  = document.getElementById('tel-triage');
-            triEl.textContent = triage;
-            triEl.className   = `text-xs font-mono font-bold ${
-                triage === 'Critical' ? 'text-red-400' :
-                triage === 'High'     ? 'text-orange-400' :
-                triage === 'Medium'   ? 'text-yellow-400' : 'text-green-400'
-            }`;
-            document.getElementById('tel-rationale').textContent = sr.triage_rationale || '—';
+  function severityLabel(c) {
+    return (
+      c?.safety_report?.risk_triage_score ||
+      c?.safety_report?.safety_risk_level ||
+      'Medium'
+    );
+  }
 
-            // Agent 4
-            const eligible = we.eligible_schemes || [];
-            document.getElementById('tel-schemes-count').textContent = `${eligible.length} matched`;
-            document.getElementById('tel-scheme-names').textContent  =
-                eligible.map(s => s.name_hi || s.name).join(' · ') || '—';
+  function workerName(c) {
+    // Cases don't store the worker's name directly in canonical form;
+    // fall back to the _id for display.
+    return c?.worker_name || c?._id?.replace('case_', 'Case #') || 'Unknown Worker';
+  }
 
-            // Agent 5
-            if (analytics) {
-                const rd = analytics.by_risk_level || {};
-                document.getElementById('tel-risk-dist').textContent =
-                    `C:${rd.Critical||0} H:${rd.High||0} M:${rd.Medium||0} L:${rd.Low||0}`;
-                document.getElementById('tel-welfare-total').textContent =
-                    `${analytics.total_welfare_matches||0} total`;
-            }
-            document.getElementById('tel-sync-time').textContent =
-                new Date().toTimeString().substring(0,8);
-        }
+  function industryLabel(c) {
+    return c?.worker_profile?.industry || c?.industry || '—';
+  }
 
-        // ── Open modal with full case object ────────────────────────────────
-        function openModal(c) {
-            const wp = c.worker_profile       || {};
-            const wa = c.wage_analysis        || {};
-            const sr = c.safety_report        || {};
-            const we = c.welfare_entitlements || {};
+  function clusterLabel(c) {
+    return c?.worker_profile?.cluster || '—';
+  }
 
-            const triage = sr.risk_triage_score || sr.safety_risk_level || 'Medium';
-            const color  = triage === 'Critical' ? 'red' :
-                           triage === 'High'     ? 'orange' :
-                           triage === 'Medium'   ? 'yellow' : 'green';
+  // ── KPI update ────────────────────────────────────────
+  function updateKPIs(data) {
+    const total    = data.total_cases || 0;
+    const analytics= data.analytics || {};
+    const byRisk   = analytics.by_risk_level || {};
+    const high     = (byRisk.Critical || 0) + (byRisk.High || 0);
 
-            // Badge
-            const badge = document.getElementById('modal-triage-badge');
-            badge.textContent = triage;
-            badge.className   = `ml-auto text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border bg-${color}-500/10 text-${color}-300 border-${color}-500/40`;
+    animateNumber($('kpiTotal'), total);
+    animateNumber($('kpiHigh'),  high);
 
-            document.getElementById('modal-name').textContent     = c._id || 'Unknown';
-            document.getElementById('modal-location').textContent = wp.mapped_location || '—';
-            document.getElementById('modal-industry').textContent = wp.industry        || '—';
-            document.getElementById('modal-cluster').textContent  = wp.cluster         || '—';
-            document.getElementById('modal-rationale').textContent = sr.triage_rationale || '—';
+    // Risk distribution chips
+    const bar = $('kpiRiskBar');
+    bar.innerHTML = '';
+    const order = ['Critical','High','Medium','Low'];
+    order.forEach(level => {
+      const n = byRisk[level] || 0;
+      if (n === 0) return;
+      const col = severityColors(level);
+      bar.insertAdjacentHTML('beforeend', `
+        <span class="text-xs font-mono px-2.5 py-1 rounded-xl border ${col.bg} ${col.border} ${col.text}">
+          ${level}: ${n}
+        </span>`);
+    });
+  }
 
-            // Wage
-            const deficit  = wa.wage_deficit || 0;
-            const wSev     = wa.violation_severity || 'None';
-            const defEl    = document.getElementById('modal-wage-deficit');
-            defEl.textContent = `₹${deficit}/day`;
-            defEl.className   = `text-lg font-bold font-mono ${deficit > 0 ? 'text-red-400' : 'text-green-400'}`;
-            const sevEl    = document.getElementById('modal-wage-severity');
-            sevEl.textContent = wSev;
-            sevEl.className   = `text-lg font-bold font-mono ${
-                wSev === 'Critical' ? 'text-red-400' :
-                wSev === 'Major'    ? 'text-orange-400' :
-                wSev === 'Minor'    ? 'text-yellow-400' : 'text-green-400'
-            }`;
+  function animateNumber(el, target) {
+    if (!el) return;
+    const current = parseInt(el.textContent) || 0;
+    if (current === target) return;
+    el.classList.remove('num-pop');
+    void el.offsetWidth; // reflow to restart animation
+    el.classList.add('num-pop');
+    el.textContent = target;
+  }
 
-            // BOCW flags
-            const bocwFlags = sr.bocw_compliance_flags || [];
-            document.getElementById('modal-bocw').innerHTML = bocwFlags.length
-                ? bocwFlags.map(f => `<p class="text-[11px] text-slate-300 flex gap-1"><span class="text-red-400">•</span>${f}</p>`).join('')
-                : '<p class="text-[11px] text-slate-500">No BOCW violations detected</p>';
+  // ── Feed rendering ────────────────────────────────────
+  function renderFeed(cases) {
+    const feed   = $('caseFeed');
+    const empty  = $('feedEmpty');
+    const count  = $('caseCount');
 
-            // Tags
-            const tags = sr.violation_tags || [];
-            document.getElementById('modal-tags').innerHTML = tags.length
-                ? tags.map(t =>
-                    `<span class="text-[10px] uppercase tracking-wider bg-${color}-500/10 text-${color}-300 px-2 py-1 rounded border border-${color}-500/20">${t}</span>`
-                  ).join('')
-                : '<span class="text-[11px] text-slate-500">None detected</span>';
+    // Remove cases no longer in DB (edge case)
+    const liveIds = new Set(cases.map(c => c._id));
+    document.querySelectorAll('.case-card').forEach(el => {
+      if (!liveIds.has(el.dataset.id)) {
+        el.remove();
+        displayedIds.delete(el.dataset.id);
+      }
+    });
 
-            // Schemes
-            const schemes = (we.eligible_schemes || []);
-            document.getElementById('modal-schemes').innerHTML = schemes.length
-                ? schemes.map(s =>
-                    `<span class="text-[10px] bg-green-500/10 text-green-300 px-2 py-1 rounded border border-green-500/20">${s.name_hi || s.name}</span>`
-                  ).join('')
-                : '<span class="text-[11px] text-slate-500">No schemes matched</span>';
+    let visible = 0;
+    cases.forEach(c => {
+      if (!matchesFilter(c)) return;
+      visible++;
+      if (displayedIds.has(c._id)) return; // already rendered
+      displayedIds.add(c._id);
 
-            const modal = document.getElementById('custom-modal');
-            modal.classList.remove('hidden');
-        }
+      const level  = severityLabel(c);
+      const col    = severityColors(level);
+      const indust = industryLabel(c);
+      const clust  = clusterLabel(c);
+      const time   = fmtTimestamp(c.timestamp);
+      const deficit= c?.wage_analysis?.wage_deficit || 0;
+      const wName  = workerName(c);
 
-        function closeModal() {
-            document.getElementById('custom-modal').classList.add('hidden');
-        }
+      const card = document.createElement('div');
+      card.className = `case-card bg-surface rounded-2xl p-4 slide-in${c._id === selectedId ? ' active' : ''}`;
+      card.dataset.id = c._id;
+      card.innerHTML = `
+        <div class="flex items-start justify-between gap-2 mb-2">
+          <div class="min-w-0">
+            <p class="text-sm font-bold text-ink truncate" style="font-weight:700;">${escHtml(wName)}</p>
+            <p class="text-xs text-muted font-mono truncate">${escHtml(indust)} · ${escHtml(clust)}</p>
+          </div>
+          <span class="flex-shrink-0 flex items-center gap-1.5 text-xs font-mono px-2.5 py-1 rounded-xl border ${col.bg} ${col.border} ${col.text}">
+            <span class="w-1.5 h-1.5 rounded-full ${col.dot}"></span>${escHtml(level)}
+          </span>
+        </div>
+        <p class="text-xs text-muted line-clamp-2 leading-relaxed mb-2">${escHtml(c.raw_input_text || '–')}</p>
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-mono text-muted">${time}</span>
+          ${deficit > 0
+            ? `<span class="text-xs font-mono text-alert font-600" style="font-weight:600;">₹${deficit}/day deficit</span>`
+            : `<span class="text-xs font-mono text-safe">✓ Wage OK</span>`}
+        </div>`;
 
-        // ── Main data loader ─────────────────────────────────────────────────
-        async function loadLiveCases() {
-            try {
-                const response = await fetch('/api/v1/cases');
-                const data     = await response.json();
+      card.addEventListener('click', () => selectCase(c._id));
+      // Prepend new cards so newest is at top
+      feed.insertBefore(card, empty.nextSibling || feed.firstChild);
+    });
 
-                if (!data.success) return;
+    empty.classList.toggle('hidden', visible > 0);
+    count.textContent = `${visible} case${visible !== 1 ? 's' : ''}`;
+  }
 
-                // Idempotency: skip re-render if nothing changed
-                if (data.total_cases === _lastCaseCount) return;
-                _lastCaseCount = data.total_cases;
+  // ── Case selection → Panel ────────────────────────────
+  function selectCase(id) {
+    selectedId = id;
+    // Update active styling
+    document.querySelectorAll('.case-card').forEach(el => {
+      el.classList.toggle('active', el.dataset.id === id);
+    });
 
-                const cases     = data.cases     || [];
-                const analytics = data.analytics || {};
-                const byRisk    = analytics.by_risk_level || {};
+    const c = allCases.find(x => x._id === id);
+    if (!c) return;
 
-                // ── KPI metrics ──────────────────────────────────────────
-                document.getElementById('metric-total').textContent    = data.total_cases;
-                document.getElementById('metric-anomalies').textContent =
-                    (byRisk.High || 0) + (byRisk.Critical || 0);
-                document.getElementById('metric-critical').textContent = byRisk.Critical || 0;
-                document.getElementById('metric-welfare').textContent  = analytics.total_welfare_matches || 0;
+    $('panelEmpty').classList.add('hidden');
+    const pc = $('panelContent');
+    pc.classList.remove('hidden');
+    pc.classList.add('flex');
+    pc.classList.remove('panel-fade');
+    void pc.offsetWidth;
+    pc.classList.add('panel-fade');
 
-                // ── Live chart ───────────────────────────────────────────
-                updateChart(analytics.by_industry);
+    populatePanel(c);
+  }
 
-                // ── Alert feed ───────────────────────────────────────────
-                const feed = document.getElementById('alert-feed');
-                feed.innerHTML = '';
+  function populatePanel(c) {
+    const level   = severityLabel(c);
+    const col     = severityColors(level);
+    const wp      = c.worker_profile  || {};
+    const wa      = c.wage_analysis   || {};
+    const sr      = c.safety_report   || {};
+    const we      = c.welfare_entitlements || {};
 
-                if (cases.length === 0) {
-                    feed.innerHTML = '<p class="text-slate-500 text-sm">No cases yet. Submit a grievance from the mobile app.</p>';
-                } else {
-                    [...cases].reverse().forEach(c => {
-                        const sr     = c.safety_report       || {};
-                        const wp     = c.worker_profile      || {};
-                        const wa     = c.wage_analysis       || {};
-                        const level  = sr.risk_triage_score  || sr.safety_risk_level || c.risk_level || 'Medium';
-                        const tags   = sr.violation_tags     || [];
-                        const text   = c.raw_input_text      || 'No text provided.';
-                        const isCrit = level.toLowerCase() === 'critical';
-                        const color  = isCrit ? 'red' : level.toLowerCase() === 'high' ? 'orange' : 'yellow';
+    // Header
+    $('panelCaseId').textContent      = c._id || '—';
+    $('panelTimestamp').textContent   = fmtDateFull(c.timestamp);
+    $('panelWorkerName').textContent  = workerName(c);
+    $('panelMeta').textContent        = [wp.cluster, wp.industry].filter(Boolean).join(' · ') || '—';
 
-                        const tagsHtml = tags.slice(0, 3).map(tag =>
-                            `<span class="text-[9px] uppercase tracking-wider bg-${color}-500/10 text-${color}-300 px-2 py-1 rounded border border-${color}-500/20">${tag}</span>`
-                        ).join('');
+    // Triage badge
+    $('panelTriageBadge').innerHTML = `
+      <span class="text-sm font-mono font-700 px-3 py-1.5 rounded-2xl border ${col.bg} ${col.border} ${col.text}" style="font-weight:700;">
+        ${escHtml(level)}
+      </span>`;
 
-                        const wageHtml = wa.wage_deficit > 0
-                            ? `<span class="text-[9px] bg-red-500/10 text-red-300 px-2 py-1 rounded border border-red-500/20">₹${wa.wage_deficit} deficit</span>`
-                            : '';
+    // Raw text
+    $('panelRawText').textContent = c.raw_input_text || '—';
 
-                        feed.innerHTML += `
-                            <div class="alert-card p-3 rounded-lg hover-glow-${color} ${isCrit ? 'critical-alert' : ''}"
-                                 onclick='openModal(${JSON.stringify(c)})'>
-                                <div class="flex justify-between items-start">
-                                    <span class="text-[10px] font-bold text-${color}-400 uppercase tracking-widest flex items-center gap-1">
-                                        ${isCrit ? '<svg class="w-3 h-3 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>' : ''}
-                                        ${level}
-                                    </span>
-                                    <span class="text-[9px] text-slate-500 font-mono">${(c.timestamp||'').substring(11,19)}</span>
-                                </div>
-                                <h4 class="font-semibold text-xs mt-1 text-slate-200 font-mono">${c._id || 'case'}</h4>
-                                <p class="text-[10px] text-slate-400 mt-1 truncate">"${text.substring(0,70)}${text.length > 70 ? '…' : ''}"</p>
-                                <div class="flex gap-1 mt-2 flex-wrap">${tagsHtml}${wageHtml}</div>
-                            </div>`;
-                    });
-                }
+    // Wage
+    const deficit = wa.wage_deficit || 0;
+    $('panelWageDeficit').textContent = deficit > 0 ? `₹${deficit}` : '₹0';
+    $('panelWageDeficit').className   = `text-2xl font-black ${deficit > 0 ? 'text-alert' : 'text-safe'}`;
 
-                // ── Agent telemetry from latest case ─────────────────────
-                if (cases.length > 0) {
-                    updateTelemetry(cases[cases.length - 1], analytics);
-                }
+    const wageRows = [
+      ['Reported Wage',  wa.reported_daily_wage ? `₹${wa.reported_daily_wage}/day` : '—'],
+      ['Legal Minimum',  wa.minimum_legal_wage  ? `₹${wa.minimum_legal_wage}/day`  : '—'],
+      ['Category',       wa.wage_category       || '—'],
+      ['Severity',       wa.violation_severity  || '—'],
+    ];
+    $('panelWageDetails').innerHTML = wageRows.map(([k, v]) => `
+      <div class="flex justify-between gap-2">
+        <span class="text-xs text-muted font-mono">${escHtml(k)}</span>
+        <span class="text-xs text-ink font-600" style="font-weight:600;">${escHtml(v)}</span>
+      </div>`).join('');
 
-                // ── Last updated timestamp ────────────────────────────────
-                document.getElementById('last-updated').textContent =
-                    `Last sync: ${new Date().toTimeString().substring(0,8)}`;
+    // Safety
+    $('panelTriageRationale').textContent = sr.triage_rationale || '—';
+    const tags = sr.violation_tags || sr.osha_hazard_categories || [];
+    $('panelViolationTags').innerHTML = tags.map(t => {
+      const isHigh = (sr.osha_hazard_categories || []).includes(t);
+      return `<span class="text-xs font-mono px-2 py-0.5 rounded-lg ${isHigh ? 'bg-alert/10 text-alert border border-alert/20' : 'bg-canvas text-ink border border-border'}">${escHtml(t)}</span>`;
+    }).join('');
 
-            } catch (err) {
-                console.error('Karigar fetch error:', err);
-                document.getElementById('alert-feed').innerHTML =
-                    `<p class="text-red-500 text-sm">Failed to connect to IBM Granite Backend.<br><span class="font-mono text-xs">${err.message}</span></p>`;
-            }
-        }
+    // BOCW flags
+    const bocwFlags = sr.bocw_compliance_flags || [];
+    const bocwSec   = $('bocwSection');
+    if (bocwFlags.length > 0) {
+      bocwSec.classList.remove('hidden');
+      $('panelBocwFlags').innerHTML = bocwFlags.map(f => `
+        <div class="flex items-start gap-2 text-xs text-ink">
+          <span class="mt-0.5 text-alert font-mono">⚑</span>
+          <span>${escHtml(f)}</span>
+        </div>`).join('');
+    } else {
+      bocwSec.classList.add('hidden');
+    }
 
-        // Initial load + 5-second polling
-        loadLiveCases();
-        setInterval(loadLiveCases, 5000);
-    </script>
+    // Welfare schemes
+    const schemes = we.eligible_schemes || [];
+    $('schemeCount').textContent = `${schemes.length} eligible`;
+    $('panelSchemes').innerHTML = schemes.length > 0
+      ? schemes.map(s => `
+          <a href="${escHtml(s.apply_url || '#')}" target="_blank" rel="noopener"
+            class="scheme-chip flex items-center gap-1.5 text-xs font-600 px-3 py-1.5 rounded-2xl bg-safe/10 border border-safe/25 text-safe hover:bg-safe/20 transition-colors no-underline" style="font-weight:600;">
+            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            ${escHtml(s.name_hi || s.name)}
+          </a>`).join('')
+      : `<span class="text-xs text-muted font-mono">No eligible schemes detected</span>`;
+
+    // Worker profile grid
+    const pfRows = [
+      ['Location',   wp.mapped_location || '—'],
+      ['Cluster',    wp.cluster          || '—'],
+      ['Industry',   wp.industry         || '—'],
+      ['Skills',     (wp.inferred_skills || []).slice(0,3).join(', ') || '—'],
+      ['Confidence', wp.skill_confidence != null ? `${wp.skill_confidence}%` : '—'],
+    ];
+    $('panelProfileGrid').innerHTML = pfRows.map(([k, v]) => `
+      <div class="bg-canvas rounded-xl border border-border p-3">
+        <p class="text-xs font-mono text-muted mb-0.5">${escHtml(k)}</p>
+        <p class="text-xs font-600 text-ink truncate" style="font-weight:600;">${escHtml(v)}</p>
+      </div>`).join('');
+  }
+
+  // ── Filter ────────────────────────────────────────────
+  function matchesFilter(c) {
+    if (!filterQuery) return true;
+    const q = filterQuery.toLowerCase();
+    return (
+      (c._id            || '').toLowerCase().includes(q) ||
+      (c.raw_input_text || '').toLowerCase().includes(q) ||
+      industryLabel(c).toLowerCase().includes(q) ||
+      clusterLabel(c).toLowerCase().includes(q) ||
+      severityLabel(c).toLowerCase().includes(q)
+    );
+  }
+
+  function filterFeed(q) {
+    filterQuery = q.trim();
+    // Re-render visible state without refetch
+    renderFeed(allCases);
+  }
+
+  // ── Fetch loop ────────────────────────────────────────
+  async function fetchCases() {
+    const dot = $('refreshStatus');
+    dot.className = 'w-1.5 h-1.5 rounded-full bg-marigold animate-pulse';
+
+    try {
+      const res  = await fetch('/api/v1/cases');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      $('errorToast').classList.add('hidden');
+      dot.className = 'w-1.5 h-1.5 rounded-full bg-safe';
+
+      allCases = (data.cases || []).sort((a, b) =>
+        (b.timestamp || '').localeCompare(a.timestamp || ''));
+
+      updateKPIs(data);
+      renderFeed(allCases);
+      $('lastRefresh').textContent = `Updated ${fmtTimestamp(new Date().toISOString())}`;
+
+    } catch (e) {
+      console.error('[Karigar] fetch error:', e);
+      dot.className = 'w-1.5 h-1.5 rounded-full bg-alert';
+      $('errorToast').classList.remove('hidden');
+      $('lastRefresh').textContent = 'Connection error';
+    }
+  }
+
+  // ── XSS guard ─────────────────────────────────────────
+  function escHtml(str) {
+    if (str == null) return '';
+    return String(str)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
+  }
+
+  // ── Live clock ────────────────────────────────────────
+  function tickClock() {
+    $('liveClock').textContent = new Date().toLocaleTimeString('en-IN', {
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+  }
+
+  // ── Bootstrap ─────────────────────────────────────────
+  fetchCases();
+  setInterval(fetchCases, 5000);
+  tickClock();
+  setInterval(tickClock, 1000);
+  </script>
 </body>
 </html>
